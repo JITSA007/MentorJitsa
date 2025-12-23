@@ -10,37 +10,20 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Space+Grotesk:wght@300;500;700&display=swap');
-
-:root{
-  --bg1:#020617;
-  --bg2:#0f172a;
-  --glass:rgba(15,23,42,.75);
-  --border:rgba(255,255,255,.08);
-  --accent:#22d3ee;
-  --text:#f8fafc;
-  --sub:#94a3b8;
-}
-
 body{
-  font-family:'Outfit',sans-serif;
-  background:radial-gradient(circle at top left,var(--bg1),var(--bg2));
-  color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont;
+  background:radial-gradient(circle at top left,#020617,#0f172a);
+  color:#f8fafc;
   overflow:hidden;
 }
-
-.font-mono{font-family:'Space Grotesk',monospace}
-
 .glass{
-  background:var(--glass);
-  backdrop-filter:blur(20px);
-  border:1px solid var(--border);
-  box-shadow:0 25px 40px rgba(0,0,0,.45);
+  background:rgba(15,23,42,.75);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.08);
 }
-
 input,select,textarea{
   background:rgba(0,0,0,.35);
-  border:1px solid var(--border);
+  border:1px solid rgba(255,255,255,.1);
   color:white;
 }
 </style>
@@ -50,27 +33,15 @@ input,select,textarea{
 
 <!-- SIDEBAR -->
 <aside class="w-80 hidden md:flex p-4">
-  <div class="glass rounded-3xl w-full flex flex-col overflow-hidden">
-    <div class="p-6 border-b border-white/10 flex items-center gap-4">
-      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-        <i class="fa-solid fa-brain text-white text-2xl"></i>
-      </div>
-      <div>
-        <h1 class="font-black text-xl">Dev<span class="text-cyan-400">Spark</span></h1>
-        <p class="text-xs font-mono text-slate-400">MENTOR EDITION</p>
-      </div>
+  <div class="glass rounded-3xl w-full flex flex-col">
+    <div class="p-6 border-b border-white/10 font-bold text-xl">
+      Dev<span class="text-cyan-400">Spark</span>
     </div>
 
-    <div class="p-4 space-y-3">
-      <button onclick="switchView('generator')" class="w-full bg-cyan-600 py-3 rounded-xl font-bold">
-        <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Generator
-      </button>
-      <button onclick="switchView('mentor')" class="w-full glass py-3 rounded-xl font-bold">
-        <i class="fa-solid fa-user-graduate mr-2"></i> Mentor
-      </button>
-      <button onclick="openSettings()" class="w-full glass py-3 rounded-xl font-bold">
-        <i class="fa-solid fa-sliders mr-2"></i> Settings
-      </button>
+    <div class="p-4 space-y-2">
+      <button onclick="switchView('generator')" class="w-full bg-cyan-600 py-3 rounded-xl font-bold">Generator</button>
+      <button onclick="switchView('mentor')" class="w-full glass py-3 rounded-xl font-bold">Mentor</button>
+      <button onclick="openSettings()" class="w-full glass py-3 rounded-xl font-bold">Settings</button>
     </div>
 
     <div class="px-4 text-xs text-slate-400 uppercase">History</div>
@@ -79,119 +50,69 @@ input,select,textarea{
 </aside>
 
 <!-- MAIN -->
-<main class="flex-1 relative overflow-y-auto p-8">
+<main class="flex-1 overflow-y-auto p-8">
 
 <!-- GENERATOR -->
 <section id="view-generator">
-  <div class="max-w-4xl mx-auto space-y-12 mt-12">
+  <div class="max-w-4xl mx-auto space-y-8">
 
-    <div class="text-center">
-      <h1 class="text-7xl font-black">CREATE.</h1>
-      <p class="font-mono tracking-widest text-cyan-400">AI PROJECT ARCHITECT</p>
+    <h1 class="text-6xl font-black text-center">CREATE.</h1>
+
+    <div class="glass p-8 rounded-3xl grid md:grid-cols-2 gap-6">
+      <input id="stackInput" placeholder="Tech Stack (React, Python)" class="p-4 rounded-xl">
+      <input id="domainInput" placeholder="Domain (AI, Healthcare)" class="p-4 rounded-xl">
+      <select id="levelInput" class="p-4 rounded-xl">
+        <option>Beginner</option>
+        <option>Intermediate</option>
+        <option>Advanced</option>
+      </select>
+      <button onclick="generateProject()" class="bg-gradient-to-r from-cyan-600 to-blue-600 py-4 rounded-xl font-bold">
+        Generate Project
+      </button>
     </div>
 
-    <div class="glass p-10 rounded-3xl grid md:grid-cols-2 gap-8">
-      <div>
-        <label class="text-xs uppercase text-slate-400">Tech Stack</label>
-        <input id="stackInput" class="w-full mt-2 p-4 rounded-xl font-mono" placeholder="React, Python, Flutter">
-      </div>
-      <div>
-        <label class="text-xs uppercase text-slate-400">Domain</label>
-        <input id="domainInput" class="w-full mt-2 p-4 rounded-xl" placeholder="AI / Healthcare / SaaS">
-      </div>
-      <div>
-        <label class="text-xs uppercase text-slate-400">Skill Level</label>
-        <select id="levelInput" class="w-full mt-2 p-4 rounded-xl">
-          <option>Beginner</option>
-          <option>Intermediate</option>
-          <option>Advanced</option>
-        </select>
-      </div>
-      <div class="flex items-end">
-        <button onclick="generateProject()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 py-4 rounded-xl font-bold">
-          Generate Project
-        </button>
-      </div>
-    </div>
+    <div id="resultBox" class="hidden glass p-8 rounded-3xl space-y-4">
+      <h2 id="resTitle" class="text-3xl font-black"></h2>
+      <p id="resDesc" class="text-slate-300"></p>
 
-    <div id="resultBox" class="hidden glass p-10 rounded-3xl space-y-6">
-      <h2 id="resTitle" class="text-4xl font-black"></h2>
-      <p id="resDesc" class="text-slate-300 text-lg"></p>
+      <div id="resStack" class="flex gap-2 flex-wrap"></div>
+      <div id="resRoadmap"></div>
 
-      <div>
-        <h3 class="text-cyan-400 font-bold mb-2">Tech Stack</h3>
-        <div id="resStack" class="flex flex-wrap gap-2"></div>
-      </div>
-
-      <div>
-        <h3 class="text-cyan-400 font-bold mb-2">Roadmap</h3>
-        <div id="resRoadmap" class="prose prose-invert max-w-none"></div>
-      </div>
-
-      <div>
-        <h3 class="text-cyan-400 font-bold mb-2">Mentor Prompt</h3>
-        <textarea id="resPrompt" class="w-full h-40 p-4 rounded-xl font-mono text-xs"></textarea>
-      </div>
+      <textarea id="resPrompt" class="w-full h-40 p-3 rounded-xl text-xs"></textarea>
     </div>
 
   </div>
 </section>
 
 <!-- MENTOR -->
-<section id="view-mentor" class="hidden">
-  <div class="max-w-5xl mx-auto space-y-12 py-20">
+<section id="view-mentor" class="hidden max-w-4xl mx-auto py-16 space-y-6">
+  <h1 class="text-5xl font-black text-center">Dr. Jitendra Prajapat</h1>
+  <p class="text-center text-cyan-400">AI Researcher • Cybersecurity Expert • Mentor</p>
 
-    <div class="text-center">
-      <h1 class="text-6xl font-black">Dr. Jitendra Prajapat</h1>
-      <p class="font-mono text-cyan-400 uppercase tracking-widest mt-2">
-        Mentor • AI/ML Researcher • Cybersecurity Expert
-      </p>
-    </div>
+  <div class="glass p-8 rounded-3xl text-slate-300 leading-relaxed">
+    I mentor students to build systems that survive real-world complexity —
+    from healthcare AI to secure enterprise systems.
+  </div>
 
-    <div class="glass p-10 rounded-3xl text-lg leading-relaxed text-slate-300 space-y-4">
-      <p>
-        I mentor students to build systems that survive real-world complexity.
-        My work bridges academia, industry infrastructure, AI research, and social impact.
-      </p>
-      <p>
-        From hospital IT systems with zero downtime to AI-driven tuberculosis diagnosis,
-        my focus is on technology that matters.
-      </p>
-      <p>
-        I don’t prepare students for exams — I prepare them for responsibility.
-      </p>
-    </div>
-
-    <div class="text-center">
-      <a href="https://wa.me/919664301637?text=Hello%20Dr.%20Jitendra,%20I%20am%20interested%20in%20your%20mentorship%20and%20guidance."
-         target="_blank"
-         class="inline-flex items-center gap-4 bg-green-500 px-10 py-5 rounded-3xl font-bold text-xl">
-        <i class="fa-brands fa-whatsapp text-3xl"></i>
-        Start Mentorship Conversation
-      </a>
-    </div>
-
+  <div class="text-center">
+    <a
+      href="https://wa.me/919664301637?text=Hello%20Dr.%20Jitendra,%20I%20would%20like%20mentorship%20guidance."
+      target="_blank"
+      class="bg-green-500 px-8 py-4 rounded-xl font-bold inline-block">
+      WhatsApp Mentor
+    </a>
   </div>
 </section>
 
 </main>
 
-<!-- SETTINGS MODAL -->
-<div id="settingsModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center">
-  <div class="glass p-8 rounded-3xl w-full max-w-md space-y-4">
-    <h2 class="text-2xl font-bold text-center">Settings</h2>
-
-    <input id="apiKeyInput" placeholder="Paste Gemini API Key" class="w-full p-3 rounded-xl">
-    <button onclick="fetchModels()" class="w-full bg-cyan-600 py-2 rounded-xl font-bold">
-      Fetch Models
-    </button>
-
-    <select id="modelSelect" class="w-full p-3 rounded-xl"></select>
-
-    <div class="flex gap-2">
-      <button onclick="closeSettings()" class="flex-1 glass py-2 rounded-xl">Close</button>
-      <button onclick="saveSettings()" class="flex-1 bg-green-600 py-2 rounded-xl font-bold">Save</button>
-    </div>
+<!-- SETTINGS -->
+<div id="settingsModal" class="fixed inset-0 hidden bg-black/80 flex items-center justify-center">
+  <div class="glass p-6 rounded-2xl w-96 space-y-3">
+    <input id="apiKeyInput" placeholder="Paste Gemini API Key" class="p-3 rounded-xl w-full">
+    <button onclick="fetchModels()" class="bg-cyan-600 w-full py-2 rounded-xl">Fetch Models</button>
+    <select id="modelSelect" class="p-3 rounded-xl w-full"></select>
+    <button onclick="saveSettings()" class="bg-green-600 w-full py-2 rounded-xl font-bold">Save</button>
   </div>
 </div>
 
@@ -200,81 +121,96 @@ let API_KEY = localStorage.getItem("gemini_key") || "";
 let MODEL = localStorage.getItem("gemini_model") || "gemini-1.5-flash";
 let history = JSON.parse(localStorage.getItem("devspark_history") || "[]");
 
+/* ---------- Views ---------- */
 function switchView(v){
-  document.getElementById("view-generator").classList.toggle("hidden", v!=="generator");
-  document.getElementById("view-mentor").classList.toggle("hidden", v!=="mentor");
+  viewGenerator.classList.toggle("hidden", v!=="generator");
+  viewMentor.classList.toggle("hidden", v!=="mentor");
 }
 
-function openSettings(){document.getElementById("settingsModal").classList.remove("hidden")}
-function closeSettings(){document.getElementById("settingsModal").classList.add("hidden")}
-
-async function fetchModels(){
-  const key=document.getElementById("apiKeyInput").value.trim();
-  if(!key) return alert("Enter API Key");
-  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-  const data=await res.json();
-  const models=data.models
-    .filter(m=>m.supportedGenerationMethods?.includes("generateContent"))
-    .map(m=>m.name.replace("models/",""));
-  document.getElementById("modelSelect").innerHTML=models.map(m=>`<option>${m}</option>`).join("");
-}
-
+/* ---------- Settings ---------- */
+function openSettings(){ settingsModal.classList.remove("hidden") }
 function saveSettings(){
-  API_KEY=document.getElementById("apiKeyInput").value.trim();
-  MODEL=document.getElementById("modelSelect").value;
+  API_KEY = apiKeyInput.value.trim();
+  MODEL = modelSelect.value;
   localStorage.setItem("gemini_key",API_KEY);
   localStorage.setItem("gemini_model",MODEL);
-  closeSettings();
+  settingsModal.classList.add("hidden");
 }
 
+async function fetchModels(){
+  const key = apiKeyInput.value.trim();
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+  const data = await res.json();
+  const models = data.models
+    .filter(m=>m.supportedGenerationMethods?.includes("generateContent"))
+    .map(m=>m.name.replace("models/",""));
+  modelSelect.innerHTML = models.map(m=>`<option>${m}</option>`).join("");
+}
+
+/* ---------- History ---------- */
 function renderHistory(){
-  const list=document.getElementById("historyList");
-  list.innerHTML=history.map(h=>`
-    <div onclick="loadHistory(${h.id})" class="glass p-3 rounded-xl cursor-pointer">
-      <div class="font-bold text-sm">${h.title}</div>
+  historyList.innerHTML = history.map(h=>`
+    <div onclick="loadHistory(${h.id})" class="glass p-2 rounded-xl cursor-pointer">
+      <div class="font-bold">${h.title}</div>
       <div class="text-xs text-slate-400">${h.domain}</div>
     </div>`).join("");
 }
 renderHistory();
 
 function loadHistory(id){
-  const p=history.find(x=>x.id===id);
+  const p = history.find(x=>x.id===id);
   if(p) renderResult(p);
 }
 
+/* ---------- Generation ---------- */
 async function generateProject(){
   if(!API_KEY) return openSettings();
-  const prompt=`Return strict JSON only:
+
+  const stack = stackInput.value || "Modern Stack";
+  const domain = domainInput.value || "General";
+  const level = levelInput.value;
+
+  const prompt = `
+Return ONLY valid JSON:
 {
-"title":"Project",
-"description":"desc",
-"tech_stack":["a"],
-"roadmap":"md",
-"mentor_prompt":"guide"
-}`;
-  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-  });
-  const data=await res.json();
-  const text=data.candidates[0].content.parts[0].text.replace(/```/g,"");
-  const p=JSON.parse(text);
-  p.id=Date.now();
-  p.domain=document.getElementById("domainInput").value;
+ "title":"Project Title",
+ "description":"2 line summary",
+ "tech_stack":["Tech1","Tech2"],
+ "roadmap":"Markdown roadmap",
+ "mentor_prompt":"Mentor guidance"
+}
+`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+    {
+      method:"POST",
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+    }
+  );
+
+  const data = await res.json();
+  const text = data.candidates[0].content.parts[0].text.replace(/```/g,"");
+  const p = JSON.parse(text);
+
+  p.id = Date.now();
+  p.domain = domain;
+
   history.unshift(p);
   localStorage.setItem("devspark_history",JSON.stringify(history));
+
   renderHistory();
   renderResult(p);
 }
 
 function renderResult(p){
-  document.getElementById("resultBox").classList.remove("hidden");
-  resTitle.innerText=p.title;
-  resDesc.innerText=p.description;
-  resStack.innerHTML=p.tech_stack.map(t=>`<span class="px-2 py-1 bg-slate-800 rounded">${t}</span>`).join("");
-  resRoadmap.innerHTML=marked.parse(p.roadmap);
-  resPrompt.value=p.mentor_prompt;
+  resultBox.classList.remove("hidden");
+  resTitle.innerText = p.title;
+  resDesc.innerText = p.description;
+  resStack.innerHTML = p.tech_stack.map(t=>`<span class="bg-slate-800 px-2 py-1 rounded">${t}</span>`).join("");
+  resRoadmap.innerHTML = marked.parse(p.roadmap);
+  resPrompt.value = p.mentor_prompt;
 }
 </script>
 
