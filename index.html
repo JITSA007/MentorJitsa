@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevSpark AI - Dr. Jitendra Edition</title>
+    <title>DevSpark AI - Dr. Jitendra Edition v22</title>
     
     <!-- LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -337,6 +337,7 @@
         <div id="loadingSection" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-xl bg-black/80">
             <div class="w-16 h-16 border-4 border-t-cyan-500 rounded-full animate-spin"></div>
             <h2 class="text-2xl font-bold text-white mt-4 animate-pulse">ARCHITECTING...</h2>
+            <p id="retryText" class="text-xs text-red-400 mt-2 hidden">Rate limit hit. Retrying in 3s...</p>
         </div>
 
         <!-- === RESULT OVERLAY === -->
@@ -420,47 +421,64 @@
         async function generateProject() {
             const s=document.getElementById('inStack').value||"Modern Tech", d=document.getElementById('inDomain').value||"Web App", l=document.getElementById('inLevel').value;
             document.getElementById('loadingSection').classList.remove('hidden');
+            document.getElementById('retryText').classList.add('hidden');
             
-            // STRICT JSON Prompt to prevent garbage text
             const prompt = `Role: Senior Architect. Create project. User: ${l} dev, ${d}, ${s}. 
             Req: Return VALID JSON ONLY. NO markdown blocks. NO trailing text.
             Structure: { "title": "Name", "description": "Summary", "tech_stack": ["T1"], "roadmap": "Markdown", "monetization": "Idea", "resume_points": ["Point1"], "mega_prompt": "Tutor Prompt" }`;
             
-            // AUTO-HEALING MODELS using gemini-2.5-flash-preview-09-2025
-            const models = ['gemini-2.5-flash-preview-09-2025'];
-            let success = false;
-
-            for (let model of models) {
+            const model = 'gemini-1.5-flash'; // More stable on free tier than 2.0 experimental
+            
+            // RETRY LOGIC FOR QUOTA LIMITS
+            let attempts = 0;
+            const maxAttempts = 3;
+            
+            while(attempts < maxAttempts) {
                 try {
                     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, { 
                         method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
                     });
+                    
                     const data = await r.json();
                     
                     if (data.error) {
+                        // Check for Quota Exceeded (429)
                         if (data.error.code === 429) {
-                            // Retry after delay
-                            await new Promise(resolve => setTimeout(resolve, 3000));
-                            continue;
+                            attempts++;
+                            const waitTime = attempts * 3000; // 3s, 6s, 9s
+                            document.getElementById('retryText').innerText = `Quota hit. Retrying in ${waitTime/1000}s...`;
+                            document.getElementById('retryText').classList.remove('hidden');
+                            await new Promise(resolve => setTimeout(resolve, waitTime));
+                            continue; // Retry loop
                         }
                         throw new Error(data.error.message);
                     }
 
-                    // ROBUST PARSING
                     let text = data.candidates[0].content.parts[0].text;
                     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
                     const json = JSON.parse(text);
                     
                     renderProject(json); saveHistory({...json, id:Date.now(), domain:d});
-                    success = true; break;
+                    document.getElementById('loadingSection').classList.add('hidden');
+                    return; // Success, exit function
+
                 } catch(e) {
-                    console.log(`Model ${model} failed:`, e);
-                    if (model === models[models.length-1]) {
-                        showToast("Error", e.message, true); openSettings();
+                    if (attempts >= maxAttempts - 1) {
+                        showToast("Failed", e.message, true);
+                        openSettings();
+                        document.getElementById('loadingSection').classList.add('hidden');
+                        return;
+                    }
+                    // If not 429, it might be another error, but we loop if we want general robustness
+                    // For now, only 429 triggers retry loop logic above.
+                    // If it's a different error, we throw immediately.
+                    if (!e.message.includes("Quota")) {
+                         showToast("Error", e.message, true);
+                         document.getElementById('loadingSection').classList.add('hidden');
+                         return;
                     }
                 }
             }
-            document.getElementById('loadingSection').classList.add('hidden');
         }
 
         function renderProject(p) {
@@ -476,7 +494,6 @@
 
         function saveHistory(p) { history.unshift(p); if(history.length>10) history.pop(); localStorage.setItem('devspark_history', JSON.stringify(history)); renderHistory(); }
         
-        // FIXED HISTORY RENDER: Use IDs, not object passing
         function renderHistory() {
             document.getElementById('historyList').innerHTML = history.map(p => `
                 <div onclick='loadHistory(${p.id})' class="glass-input p-3 rounded-xl cursor-pointer hover:bg-white/10 mb-2">
@@ -490,7 +507,7 @@
             if(p) renderProject(p);
         }
 
-        // FIXED CLEAR HISTORY FUNCTION
+        // FIXED CLEAR HISTORY (Global Scope)
         function clearHistory() { 
             if(confirm("Clear history?")) { 
                 history=[]; 
