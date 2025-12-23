@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DevSpark AI – Mentor Edition</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Space+Grotesk:wght@300;500;700&display=swap');
@@ -33,9 +33,9 @@ body{
 
 .glass{
   background:var(--glass);
-  backdrop-filter:blur(18px);
+  backdrop-filter:blur(20px);
   border:1px solid var(--border);
-  box-shadow:0 20px 40px rgba(0,0,0,.4);
+  box-shadow:0 25px 40px rgba(0,0,0,.45);
 }
 
 input,select,textarea{
@@ -68,18 +68,21 @@ input,select,textarea{
       <button onclick="switchView('mentor')" class="w-full glass py-3 rounded-xl font-bold">
         <i class="fa-solid fa-user-graduate mr-2"></i> Mentor
       </button>
+      <button onclick="openSettings()" class="w-full glass py-3 rounded-xl font-bold">
+        <i class="fa-solid fa-sliders mr-2"></i> Settings
+      </button>
     </div>
 
-    <div class="px-4 text-xs text-slate-400 uppercase tracking-wider">History</div>
+    <div class="px-4 text-xs text-slate-400 uppercase">History</div>
     <div id="historyList" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
   </div>
 </aside>
 
 <!-- MAIN -->
-<main class="flex-1 relative overflow-hidden">
+<main class="flex-1 relative overflow-y-auto p-8">
 
-<!-- GENERATOR VIEW -->
-<section id="view-generator" class="h-full overflow-y-auto p-8">
+<!-- GENERATOR -->
+<section id="view-generator">
   <div class="max-w-4xl mx-auto space-y-12 mt-12">
 
     <div class="text-center">
@@ -111,7 +114,6 @@ input,select,textarea{
       </div>
     </div>
 
-    <!-- RESULT -->
     <div id="resultBox" class="hidden glass p-10 rounded-3xl space-y-6">
       <h2 id="resTitle" class="text-4xl font-black"></h2>
       <p id="resDesc" class="text-slate-300 text-lg"></p>
@@ -135,9 +137,9 @@ input,select,textarea{
   </div>
 </section>
 
-<!-- MENTOR VIEW -->
-<section id="view-mentor" class="hidden h-full overflow-y-auto p-12">
-  <div class="max-w-5xl mx-auto space-y-12">
+<!-- MENTOR -->
+<section id="view-mentor" class="hidden">
+  <div class="max-w-5xl mx-auto space-y-12 py-20">
 
     <div class="text-center">
       <h1 class="text-6xl font-black">Dr. Jitendra Prajapat</h1>
@@ -156,154 +158,125 @@ input,select,textarea{
         my focus is on technology that matters.
       </p>
       <p>
-        I do not prepare students for exams — I prepare them for responsibility.
+        I don’t prepare students for exams — I prepare them for responsibility.
       </p>
+    </div>
+
+    <div class="text-center">
+      <a href="https://wa.me/919664301637?text=Hello%20Dr.%20Jitendra,%20I%20am%20interested%20in%20your%20mentorship%20and%20guidance."
+         target="_blank"
+         class="inline-flex items-center gap-4 bg-green-500 px-10 py-5 rounded-3xl font-bold text-xl">
+        <i class="fa-brands fa-whatsapp text-3xl"></i>
+        Start Mentorship Conversation
+      </a>
     </div>
 
   </div>
 </section>
 
 </main>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center">
+  <div class="glass p-8 rounded-3xl w-full max-w-md space-y-4">
+    <h2 class="text-2xl font-bold text-center">Settings</h2>
+
+    <input id="apiKeyInput" placeholder="Paste Gemini API Key" class="w-full p-3 rounded-xl">
+    <button onclick="fetchModels()" class="w-full bg-cyan-600 py-2 rounded-xl font-bold">
+      Fetch Models
+    </button>
+
+    <select id="modelSelect" class="w-full p-3 rounded-xl"></select>
+
+    <div class="flex gap-2">
+      <button onclick="closeSettings()" class="flex-1 glass py-2 rounded-xl">Close</button>
+      <button onclick="saveSettings()" class="flex-1 bg-green-600 py-2 rounded-xl font-bold">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* ===========================
-   GLOBAL STATE
-=========================== */
 let API_KEY = localStorage.getItem("gemini_key") || "";
-let MODEL = "gemini-1.5-flash";
+let MODEL = localStorage.getItem("gemini_model") || "gemini-1.5-flash";
 let history = JSON.parse(localStorage.getItem("devspark_history") || "[]");
 
-/* ===========================
-   VIEW SWITCHING
-=========================== */
-function switchView(view){
-  document.getElementById("view-generator").classList.toggle("hidden", view !== "generator");
-  document.getElementById("view-mentor").classList.toggle("hidden", view !== "mentor");
+function switchView(v){
+  document.getElementById("view-generator").classList.toggle("hidden", v!=="generator");
+  document.getElementById("view-mentor").classList.toggle("hidden", v!=="mentor");
 }
 
-/* ===========================
-   HISTORY RENDER (FIXED)
-=========================== */
+function openSettings(){document.getElementById("settingsModal").classList.remove("hidden")}
+function closeSettings(){document.getElementById("settingsModal").classList.add("hidden")}
+
+async function fetchModels(){
+  const key=document.getElementById("apiKeyInput").value.trim();
+  if(!key) return alert("Enter API Key");
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+  const data=await res.json();
+  const models=data.models
+    .filter(m=>m.supportedGenerationMethods?.includes("generateContent"))
+    .map(m=>m.name.replace("models/",""));
+  document.getElementById("modelSelect").innerHTML=models.map(m=>`<option>${m}</option>`).join("");
+}
+
+function saveSettings(){
+  API_KEY=document.getElementById("apiKeyInput").value.trim();
+  MODEL=document.getElementById("modelSelect").value;
+  localStorage.setItem("gemini_key",API_KEY);
+  localStorage.setItem("gemini_model",MODEL);
+  closeSettings();
+}
+
 function renderHistory(){
-  const list = document.getElementById("historyList");
-  if(!history.length){
-    list.innerHTML = `<div class="text-slate-500 text-xs text-center mt-6">No projects yet</div>`;
-    return;
-  }
-
-  list.innerHTML = history.map(item => `
-    <div onclick="loadHistory(${item.id})"
-         class="glass p-3 rounded-xl cursor-pointer hover:border-cyan-500 border border-transparent">
-      <div class="font-bold text-sm truncate">${item.title}</div>
-      <div class="text-xs text-slate-400 truncate">${item.domain}</div>
-    </div>
-  `).join("");
+  const list=document.getElementById("historyList");
+  list.innerHTML=history.map(h=>`
+    <div onclick="loadHistory(${h.id})" class="glass p-3 rounded-xl cursor-pointer">
+      <div class="font-bold text-sm">${h.title}</div>
+      <div class="text-xs text-slate-400">${h.domain}</div>
+    </div>`).join("");
 }
+renderHistory();
 
-/* ===========================
-   LOAD HISTORY ITEM (FIXED)
-=========================== */
 function loadHistory(id){
-  const project = history.find(h => h.id === id);
-  if(!project) return alert("Project not found");
-  renderResult(project);
-  switchView("generator");
+  const p=history.find(x=>x.id===id);
+  if(p) renderResult(p);
 }
 
-/* ===========================
-   GEMINI GENERATION
-=========================== */
 async function generateProject(){
-  if(!API_KEY){
-    API_KEY = prompt("Enter your Google Gemini API Key");
-    if(!API_KEY) return;
-    localStorage.setItem("gemini_key", API_KEY);
-  }
-
-  const stack = document.getElementById("stackInput").value || "Modern Tech Stack";
-  const domain = document.getElementById("domainInput").value || "General Application";
-  const level = document.getElementById("levelInput").value;
-
-  const prompt = `
-Act as a senior software architect and mentor.
-Create ONE UNIQUE project idea.
-
-User Level: ${level}
-Domain: ${domain}
-Tech Stack: ${stack}
-
-Return STRICT JSON ONLY (no markdown, no explanation):
-
+  if(!API_KEY) return openSettings();
+  const prompt=`Return strict JSON only:
 {
-  "title": "Project title",
-  "description": "2–3 line summary",
-  "tech_stack": ["item1","item2"],
-  "roadmap": "Markdown roadmap",
-  "mentor_prompt": "How a mentor would guide the student step-by-step"
-}
-`;
-
-  try{
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
-      {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({
-          contents:[{ parts:[{ text: prompt }] }]
-        })
-      }
-    );
-
-    const data = await res.json();
-    if(data.error) throw new Error(data.error.message);
-
-    let text = data.candidates[0].content.parts[0].text
-      .replace(/```json|```/g,"")
-      .trim();
-
-    const project = JSON.parse(text);
-
-    const saved = {
-      ...project,
-      id: Date.now(),
-      domain,
-      createdAt: new Date().toISOString()
-    };
-
-    history.unshift(saved);
-    history = history.slice(0,10);
-    localStorage.setItem("devspark_history", JSON.stringify(history));
-
-    renderResult(saved);
-    renderHistory();
-
-  } catch(err){
-    console.error(err);
-    alert("Generation failed. Check API key or model availability.");
-  }
+"title":"Project",
+"description":"desc",
+"tech_stack":["a"],
+"roadmap":"md",
+"mentor_prompt":"guide"
+}`;
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+  });
+  const data=await res.json();
+  const text=data.candidates[0].content.parts[0].text.replace(/```/g,"");
+  const p=JSON.parse(text);
+  p.id=Date.now();
+  p.domain=document.getElementById("domainInput").value;
+  history.unshift(p);
+  localStorage.setItem("devspark_history",JSON.stringify(history));
+  renderHistory();
+  renderResult(p);
 }
 
-/* ===========================
-   RENDER RESULT
-=========================== */
 function renderResult(p){
   document.getElementById("resultBox").classList.remove("hidden");
-
-  document.getElementById("resTitle").innerText = p.title;
-  document.getElementById("resDesc").innerText = p.description;
-
-  document.getElementById("resStack").innerHTML =
-    p.tech_stack.map(t =>
-      `<span class="px-3 py-1 rounded-lg bg-slate-800 text-xs font-mono">${t}</span>`
-    ).join("");
-
-  document.getElementById("resRoadmap").innerHTML = marked.parse(p.roadmap);
-
-  document.getElementById("resPrompt").value = p.mentor_prompt;
+  resTitle.innerText=p.title;
+  resDesc.innerText=p.description;
+  resStack.innerHTML=p.tech_stack.map(t=>`<span class="px-2 py-1 bg-slate-800 rounded">${t}</span>`).join("");
+  resRoadmap.innerHTML=marked.parse(p.roadmap);
+  resPrompt.value=p.mentor_prompt;
 }
-
-/* ===========================
-   INIT
-=========================== */
-renderHistory();
 </script>
+
+</body>
+</html>
