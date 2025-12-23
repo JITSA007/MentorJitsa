@@ -1,218 +1,522 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DevSpark AI – Mentor Edition</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevSpark AI - Dr. Jitendra Edition</title>
+    
+    <!-- LIBRARIES -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Space+Grotesk:wght@300;500;700&display=swap');
 
-<style>
-body{
-  font-family:system-ui,-apple-system,BlinkMacSystemFont;
-  background:radial-gradient(circle at top left,#020617,#0f172a);
-  color:#f8fafc;
-  overflow:hidden;
-}
-.glass{
-  background:rgba(15,23,42,.75);
-  backdrop-filter:blur(18px);
-  border:1px solid rgba(255,255,255,.08);
-}
-input,select,textarea{
-  background:rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.1);
-  color:white;
-}
-</style>
+        /* --- THEME ENGINE --- */
+        :root {
+            /* Dark Mode (Default) */
+            --bg-start: #020617;
+            --bg-end: #0f172a;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --glass-bg: rgba(15, 23, 42, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.1);
+            --accent: #22d3ee;
+            --accent-glow: rgba(34, 211, 238, 0.3);
+            --card-bg: rgba(30, 41, 59, 0.5);
+        }
+
+        body.light-mode {
+            /* Light Mode */
+            --bg-start: #f0f9ff;
+            --bg-end: #e0f2fe;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-highlight: rgba(255, 255, 255, 0.9);
+            --accent: #0284c7;
+            --accent-glow: rgba(2, 132, 199, 0.2);
+            --card-bg: rgba(255, 255, 255, 0.6);
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: radial-gradient(circle at top left, var(--bg-start), var(--bg-end));
+            color: var(--text-main); 
+            overflow: hidden;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+        
+        .font-mono { font-family: 'Space Grotesk', monospace; }
+
+        /* --- 3D GLASS CSS --- */
+        .glass-3d {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .glass-3d:hover { transform: translateY(-5px) scale(1.005); }
+
+        .glass-input {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            transition: 0.3s;
+        }
+        
+        .glass-input:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        /* --- BADGES & TAGS --- */
+        .glass-badge {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(4px);
+            transition: all 0.3s;
+            cursor: default;
+            color: var(--text-sub);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+        }
+        .glass-badge:hover {
+            border-color: var(--accent);
+            color: var(--text-main);
+            transform: scale(1.1) rotate(1deg);
+            background: var(--accent-glow);
+        }
+
+        /* --- SCROLLBAR --- */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* --- TIMELINE CSS --- */
+        .timeline-item { position: relative; padding-left: 2rem; border-left: 2px solid var(--glass-border); padding-bottom: 2rem; }
+        .timeline-item:last-child { border-left: 2px solid transparent; }
+        .timeline-dot { position: absolute; left: -9px; top: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+
+        /* --- ANIMATIONS --- */
+        @keyframes tilt { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+        .animate-enter { animation: tilt 0.6s ease-out forwards; }
+        
+        /* --- MARKDOWN --- */
+        .prose h3 { color: var(--accent); margin-top: 1.5rem; font-weight: 800; font-size: 1.1rem; }
+        .prose strong { color: #a855f7; }
+        .prose ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .prose code { background: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 4px; font-family: 'Space Grotesk'; color: #f472b6; }
+    </style>
 </head>
+<body class="flex h-screen w-screen overflow-hidden">
 
-<body class="h-screen w-screen flex">
+    <!-- === SIDEBAR === -->
+    <aside class="w-80 h-full flex flex-col z-20 shrink-0 p-4 hidden md:flex">
+        <div class="glass-3d h-full rounded-3xl flex flex-col overflow-hidden relative">
+            <div class="p-6 border-b border-white/5 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg text-white">
+                    <i class="fa-solid fa-brain text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tight leading-none">Dev<span style="color:var(--accent)">Spark</span></h1>
+                    <p class="text-[10px] font-mono mt-1 uppercase tracking-[0.2em]" style="color:var(--text-sub)">v22.0 ULTIMATE</p>
+                </div>
+            </div>
+            
+            <div class="p-4 space-y-3">
+                <button onclick="switchView('generator')" id="nav-gen" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generator
+                </button>
+                <button onclick="switchView('about')" id="nav-about" class="w-full glass-input py-4 rounded-2xl font-bold transition flex items-center justify-center gap-3 hover:border-cyan-500/50">
+                    <i class="fa-solid fa-user-tie"></i> Dr. Jitendra
+                </button>
+            </div>
 
-<!-- SIDEBAR -->
-<aside class="w-80 hidden md:flex p-4">
-  <div class="glass rounded-3xl w-full flex flex-col">
-    <div class="p-6 border-b border-white/10 font-bold text-xl">
-      Dev<span class="text-cyan-400">Spark</span>
+            <div class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider opacity-50 flex justify-between">
+                <span>History</span> <span onclick="clearHistory()" class="cursor-pointer hover:text-red-400">Clear</span>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-2 custom-scroll" id="historyList"></div>
+
+            <div class="p-4 border-t border-white/5 flex gap-2">
+                <button onclick="toggleTheme()" class="flex-1 glass-input py-3 rounded-xl text-xs font-bold hover:bg-white/10" title="Theme">
+                    <i class="fa-solid fa-circle-half-stroke text-lg"></i>
+                </button>
+                <button onclick="openSettings()" class="flex-[3] glass-input py-3 rounded-xl text-xs font-bold hover:bg-white/10 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> SETTINGS
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- === MAIN CONTENT === -->
+    <main class="flex-1 flex flex-col relative overflow-hidden p-4">
+        
+        <!-- Mobile Header -->
+        <header class="md:hidden h-16 mb-4 glass-3d rounded-2xl flex items-center justify-between px-6 z-50">
+            <span class="font-bold text-lg">DevSpark</span>
+            <div class="flex gap-4">
+                <button onclick="toggleTheme()"><i class="fa-solid fa-circle-half-stroke"></i></button>
+                <button onclick="switchView('about')" style="color:var(--accent)"><i class="fa-solid fa-user-astronaut text-xl"></i></button>
+            </div>
+        </header>
+
+        <!-- === VIEW 1: GENERATOR === -->
+        <div id="view-generator" class="flex-1 flex flex-col items-center justify-center transition-all duration-500 overflow-y-auto custom-scroll h-full">
+            <div class="max-w-4xl w-full space-y-8 animate-enter pb-12">
+                <div class="text-center space-y-2">
+                    <h2 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 tracking-tighter drop-shadow-2xl">
+                        CREATE.
+                    </h2>
+                    <p class="font-mono text-sm uppercase tracking-[0.3em]" style="color:var(--accent)">AI-Powered Project Architect</p>
+                </div>
+
+                <div class="glass-3d p-8 md:p-12 rounded-[3rem]">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold uppercase tracking-wider ml-2" style="color:var(--text-sub)">Tech Stack</label>
+                                <input type="text" id="inStack" class="glass-input w-full rounded-2xl py-4 px-6 text-sm font-mono" placeholder="React, Python, AWS...">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold uppercase tracking-wider ml-2" style="color:var(--text-sub)">Target Domain</label>
+                                <input type="text" id="inDomain" list="domainSuggestions" class="glass-input w-full rounded-2xl py-4 px-6 text-sm" placeholder="SaaS, AI Tool...">
+                                <datalist id="domainSuggestions"><option value="SaaS Application"><option value="AI/ML Tool"><option value="Mobile App"><option value="Blockchain DApp"><option value="Cyber Security Tool"></datalist>
+                            </div>
+                        </div>
+                        <div class="space-y-6 flex flex-col justify-between">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold uppercase tracking-wider ml-2" style="color:var(--text-sub)">Skill Level</label>
+                                <select id="inLevel" class="glass-input w-full rounded-2xl py-4 px-6 text-sm appearance-none cursor-pointer">
+                                    <option value="Beginner">Beginner (Learning)</option>
+                                    <option value="Intermediate">Intermediate (Building)</option>
+                                    <option value="Advanced">Advanced (Production)</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-3">
+                                <button onclick="generateProject()" class="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+                                    <span>GENERATE</span> <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                                <button onclick="randomizeInputs()" class="w-16 glass-input rounded-2xl font-bold flex items-center justify-center hover:bg-white/10" title="Randomize">
+                                    <i class="fa-solid fa-dice text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === VIEW 2: DR. JITENDRA PROFILE (FULL DETAIL) === -->
+        <div id="view-about" class="hidden flex-1 flex-col items-center justify-start p-4 transition-all duration-500 overflow-y-auto custom-scroll h-full">
+            <div class="max-w-5xl w-full animate-enter pb-20 space-y-8">
+                
+                <!-- Main Profile Card -->
+                <div class="glass-3d p-10 md:p-14 rounded-[3.5rem] relative overflow-hidden text-center border-t border-white/20">
+                    
+                    <div class="relative z-10 mb-8">
+                        <div class="w-32 h-32 mx-auto bg-gradient-to-tr from-slate-800 to-black rounded-full flex items-center justify-center shadow-2xl mb-6 border-4 border-white/5 relative">
+                            <i class="fa-solid fa-user-graduate text-5xl text-white"></i>
+                            <div class="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
+                        </div>
+                        <h2 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-300 to-slate-500 tracking-tighter mb-2">Dr. Jitendra Prajapat</h2>
+                        <div class="flex flex-wrap justify-center gap-3 mt-4">
+                            <span class="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-cyan-500/30 bg-cyan-900/10 backdrop-blur-md text-cyan-400 font-mono text-sm font-bold uppercase">Assistant Professor</span>
+                            <span class="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-purple-500/30 bg-purple-900/10 backdrop-blur-md text-purple-400 font-mono text-sm font-bold uppercase">AI Researcher</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto mb-10">
+                        <span class="glass-badge">Professor</span>
+                        <span class="glass-badge text-green-400 border-green-500/30">Cyber Security Expert</span>
+                        <span class="glass-badge">Ph.D. Scholar</span>
+                        <span class="glass-badge text-amber-400 border-amber-500/30">Farmer</span>
+                        <span class="glass-badge text-purple-300 border-purple-500/30">Pakka Geek</span>
+                        <span class="glass-badge">Entrepreneur</span>
+                        <span class="glass-badge">Motivational Speaker</span>
+                        <span class="glass-badge text-blue-300 border-blue-500/30">Social Service</span>
+                        <span class="glass-badge">Writer & Thinker</span>
+                    </div>
+
+                    <div class="glass-input p-8 rounded-3xl text-left max-w-4xl mx-auto mb-8 border-l-4 border-cyan-500">
+                        <h3 class="text-xl font-bold mb-3 flex items-center gap-2" style="color:var(--text-main)"><i class="fa-solid fa-quote-left text-cyan-400"></i> The Professor Who Refuses To Be Boring</h3>
+                        <p class="text-sm leading-relaxed opacity-80" style="color:var(--text-sub)">
+                            "I bridge the gap between theory and innovation. By day, I guide students to build and break technology. By night, I research <strong>AI for Tuberculosis Diagnosis</strong> because code should save lives. In between? I tend to the soil as a farmer."
+                        </p>
+                    </div>
+                    
+                    <a href="https://wa.me/919664301637?text=Hello%20Dr.%20Jitendra,%20I%20am%20interested%20in%20your%20mentorship." target="_blank" class="inline-flex items-center gap-4 bg-[#25D366] hover:bg-[#20bd5a] text-white px-10 py-5 rounded-3xl font-bold text-xl shadow-lg transition-transform transform hover:scale-105">
+                        <i class="fa-brands fa-whatsapp text-3xl"></i>
+                        <span>Chat with Mentor</span>
+                    </a>
+                </div>
+
+                <!-- Detailed Timeline (From CV) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- Experience -->
+                    <div class="glass-3d p-8 rounded-[2.5rem]">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2" style="color:var(--text-main)">
+                            <i class="fa-solid fa-briefcase text-cyan-400"></i> Professional Journey
+                        </h3>
+                        <div class="space-y-6">
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <h4 class="text-sm font-bold" style="color:var(--text-main)">Assistant Professor</h4>
+                                <p class="text-[10px] uppercase tracking-wider text-cyan-400 mb-1">Jaipur National University | 2023 - Present</p>
+                                <p class="text-xs" style="color:var(--text-sub)">Designed BCA/BTech modules in AI/ML & Python. Guided 15+ final year projects.</p>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <h4 class="text-sm font-bold" style="color:var(--text-main)">Managing Director</h4>
+                                <p class="text-[10px] uppercase tracking-wider text-cyan-400 mb-1">Aquantrix Pvt Ltd | 2021 - Present</p>
+                                <p class="text-xs" style="color:var(--text-sub)">Leading social-impact enterprise for sustainable water management using IoT.</p>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <h4 class="text-sm font-bold" style="color:var(--text-main)">IT Operations Manager</h4>
+                                <p class="text-[10px] uppercase tracking-wider text-cyan-400 mb-1">Activant Solutions | 2021 - 2022</p>
+                                <p class="text-xs" style="color:var(--text-sub)">Directed IT infrastructure, security protocols, and operational efficiency.</p>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <h4 class="text-sm font-bold" style="color:var(--text-main)">Sr. Manager Info Systems</h4>
+                                <p class="text-[10px] uppercase tracking-wider text-cyan-400 mb-1">Shri Hariram Hospital | 2014 - 2021</p>
+                                <p class="text-xs" style="color:var(--text-sub)">Managed complete IT ecosystem for healthcare, ensuring 24/7 uptime.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Education & Research -->
+                    <div class="glass-3d p-8 rounded-[2.5rem]">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2" style="color:var(--text-main)">
+                            <i class="fa-solid fa-graduation-cap text-purple-400"></i> Education & Research
+                        </h3>
+                        <div class="space-y-6">
+                            <div class="timeline-item">
+                                <div class="timeline-dot" style="background:rgba(168,85,247,1)"></div>
+                                <h4 class="text-sm font-bold" style="color:var(--text-main)">Ph.D. in Computer Science</h4>
+                                <p class="text-[10px] uppercase tracking-wider text-purple-400 mb-1">Suresh Gyan Vihar University | Ongoing</p>
+                                <p class="text-xs" style="color:var(--text-sub)">Research Focus: AI/ML algorithms for early Tuberculosis detection in healthcare.</p>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot" style="background:rgba(168,85,247,1)"></div>
+                                <h4 class="text-sm font-bold" style="color:var(--text-main)">MCA (Master of Computer Apps)</h4>
+                                <p class="text-[10px] uppercase tracking-wider text-purple-400 mb-1">Suresh Gyan Vihar University</p>
+                            </div>
+                            <div class="p-4 rounded-2xl border border-white/10 bg-white/5 mt-4">
+                                <h4 class="text-xs font-bold uppercase text-slate-400 mb-2">Key Competencies</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="text-[10px] px-2 py-1 rounded bg-slate-800 text-cyan-400">Python & ML</span>
+                                    <span class="text-[10px] px-2 py-1 rounded bg-slate-800 text-cyan-400">Cybersecurity</span>
+                                    <span class="text-[10px] px-2 py-1 rounded bg-slate-800 text-cyan-400">Cloud Computing</span>
+                                    <span class="text-[10px] px-2 py-1 rounded bg-slate-800 text-cyan-400">IoT Solutions</span>
+                                    <span class="text-[10px] px-2 py-1 rounded bg-slate-800 text-cyan-400">Curriculum Design</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- === LOADING OVERLAY === -->
+        <div id="loadingSection" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-xl bg-black/80">
+            <div class="w-16 h-16 border-4 border-t-cyan-500 rounded-full animate-spin"></div>
+            <h2 class="text-2xl font-bold text-white mt-4 animate-pulse">ARCHITECTING...</h2>
+        </div>
+
+        <!-- === RESULT OVERLAY === -->
+        <div id="resultSection" class="hidden absolute inset-0 z-40 overflow-y-auto custom-scroll p-4 md:p-8" style="background:var(--bg-end)">
+            <button onclick="closeResult()" class="fixed top-6 right-6 z-50 glass-input w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/20 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="max-w-6xl mx-auto space-y-8 mt-12 animate-enter pb-20">
+                <div class="glass-3d p-10 rounded-[3rem] border-l-4 border-cyan-500">
+                    <h1 id="resTitle" class="text-4xl md:text-6xl font-black mb-4" style="color:var(--text-main)">Title</h1>
+                    <p id="resDesc" class="text-xl font-light" style="color:var(--text-sub)">Desc</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="glass-3d p-8 rounded-[2rem]">
+                            <h3 class="text-xl font-bold mb-4" style="color:var(--text-main)">Stack</h3>
+                            <div id="resStack" class="flex flex-wrap gap-3"></div>
+                        </div>
+                        <div class="glass-3d p-8 rounded-[2rem]">
+                            <h3 class="text-xl font-bold mb-4" style="color:var(--text-main)">Roadmap</h3>
+                            <div id="resRoadmap" class="prose prose-invert max-w-none" style="color:var(--text-sub)"></div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <div class="glass-3d p-6 rounded-[2rem] sticky top-6">
+                            <h3 class="text-lg font-bold mb-2" style="color:var(--text-main)">AI Tutor Prompt</h3>
+                            <textarea id="resPrompt" readonly class="w-full h-80 glass-input rounded-xl p-4 text-[10px] font-mono resize-none mb-4" style="color:var(--accent)"></textarea>
+                            <button onclick="copyPrompt()" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-slate-200 transition">Copy Prompt</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- === SETTINGS MODAL === -->
+    <div id="keyModal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4 hidden">
+        <div class="glass-3d w-full max-w-md p-10 rounded-[3rem]">
+            <h2 class="text-2xl font-bold text-white text-center mb-6">Settings</h2>
+            <div class="space-y-4">
+                <input type="password" id="apiKeyInput" class="glass-input w-full rounded-2xl py-4 px-6 text-center" placeholder="Paste Google API Key">
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="document.getElementById('keyModal').classList.add('hidden')" class="flex-1 glass-input py-3 rounded-2xl font-bold">Close</button>
+                <button onclick="saveSettings()" class="flex-[2] bg-white text-black font-bold py-3 rounded-2xl hover:bg-slate-200">Save</button>
+            </div>
+            <p class="text-center mt-4 text-[10px] text-slate-500"><a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline hover:text-cyan-400">Get Free Key</a></p>
+        </div>
     </div>
 
-    <div class="p-4 space-y-2">
-      <button onclick="switchView('generator')" class="w-full bg-cyan-600 py-3 rounded-xl font-bold">Generator</button>
-      <button onclick="switchView('mentor')" class="w-full glass py-3 rounded-xl font-bold">Mentor</button>
-      <button onclick="openSettings()" class="w-full glass py-3 rounded-xl font-bold">Settings</button>
+    <!-- === TOAST === -->
+    <div id="toast" class="fixed bottom-10 right-10 glass-3d border-l-4 border-cyan-500 px-6 py-4 rounded-2xl transform translate-y-40 transition-all duration-300 z-[150]">
+        <h4 id="tHead" class="font-bold text-sm" style="color:var(--text-main)">Success</h4>
+        <p id="tMsg" class="text-xs" style="color:var(--text-sub)">Completed</p>
     </div>
 
-    <div class="px-4 text-xs text-slate-400 uppercase">History</div>
-    <div id="historyList" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
-  </div>
-</aside>
+    <script>
+        let API_KEY = localStorage.getItem('gemini_key');
+        let history = JSON.parse(localStorage.getItem('devspark_history')) || [];
+        
+        window.onload = () => {
+            if(!API_KEY) document.getElementById('keyModal').classList.remove('hidden');
+            else document.getElementById('apiKeyInput').value = API_KEY;
+            
+            if(localStorage.getItem('theme')==='light') document.body.classList.add('light-mode');
+            renderHistory();
+        };
 
-<!-- MAIN -->
-<main class="flex-1 overflow-y-auto p-8">
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        }
 
-<!-- GENERATOR -->
-<section id="view-generator">
-  <div class="max-w-4xl mx-auto space-y-8">
+        function switchView(v) {
+            const gen = document.getElementById('view-generator'), about = document.getElementById('view-about');
+            if(v==='generator') { gen.classList.remove('hidden'); gen.classList.add('flex'); about.classList.add('hidden'); about.classList.remove('flex'); }
+            else { gen.classList.add('hidden'); gen.classList.remove('flex'); about.classList.remove('hidden'); about.classList.add('flex'); }
+        }
 
-    <h1 class="text-6xl font-black text-center">CREATE.</h1>
+        function closeResult() { document.getElementById('resultSection').classList.add('hidden'); }
 
-    <div class="glass p-8 rounded-3xl grid md:grid-cols-2 gap-6">
-      <input id="stackInput" placeholder="Tech Stack (React, Python)" class="p-4 rounded-xl">
-      <input id="domainInput" placeholder="Domain (AI, Healthcare)" class="p-4 rounded-xl">
-      <select id="levelInput" class="p-4 rounded-xl">
-        <option>Beginner</option>
-        <option>Intermediate</option>
-        <option>Advanced</option>
-      </select>
-      <button onclick="generateProject()" class="bg-gradient-to-r from-cyan-600 to-blue-600 py-4 rounded-xl font-bold">
-        Generate Project
-      </button>
-    </div>
+        async function generateProject() {
+            const s=document.getElementById('inStack').value||"Modern Tech", d=document.getElementById('inDomain').value||"Web App", l=document.getElementById('inLevel').value;
+            document.getElementById('loadingSection').classList.remove('hidden');
+            
+            // STRICT JSON Prompt to prevent garbage text
+            const prompt = `Role: Senior Architect. Create project. User: ${l} dev, ${d}, ${s}. 
+            Req: Return VALID JSON ONLY. NO markdown blocks. NO trailing text.
+            Structure: { "title": "Name", "description": "Summary", "tech_stack": ["T1"], "roadmap": "Markdown", "monetization": "Idea", "resume_points": ["Point1"], "mega_prompt": "Tutor Prompt" }`;
+            
+            // AUTO-HEALING MODELS using gemini-2.5-flash-preview-09-2025
+            const models = ['gemini-2.5-flash-preview-09-2025'];
+            let success = false;
 
-    <div id="resultBox" class="hidden glass p-8 rounded-3xl space-y-4">
-      <h2 id="resTitle" class="text-3xl font-black"></h2>
-      <p id="resDesc" class="text-slate-300"></p>
+            for (let model of models) {
+                try {
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`, { 
+                        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+                    });
+                    const data = await r.json();
+                    
+                    if (data.error) {
+                        if (data.error.code === 429) {
+                            // Retry after delay
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                            continue;
+                        }
+                        throw new Error(data.error.message);
+                    }
 
-      <div id="resStack" class="flex gap-2 flex-wrap"></div>
-      <div id="resRoadmap"></div>
+                    // ROBUST PARSING
+                    let text = data.candidates[0].content.parts[0].text;
+                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const json = JSON.parse(text);
+                    
+                    renderProject(json); saveHistory({...json, id:Date.now(), domain:d});
+                    success = true; break;
+                } catch(e) {
+                    console.log(`Model ${model} failed:`, e);
+                    if (model === models[models.length-1]) {
+                        showToast("Error", e.message, true); openSettings();
+                    }
+                }
+            }
+            document.getElementById('loadingSection').classList.add('hidden');
+        }
 
-      <textarea id="resPrompt" class="w-full h-40 p-3 rounded-xl text-xs"></textarea>
-    </div>
+        function renderProject(p) {
+            document.getElementById('resultSection').classList.remove('hidden');
+            document.getElementById('resTitle').innerText = p.title;
+            document.getElementById('resDesc').innerText = p.description;
+            document.getElementById('resStack').innerHTML = p.tech_stack.map(t=>`<span class="glass-badge px-3 py-1 rounded-lg text-xs font-mono">${t}</span>`).join('');
+            document.getElementById('resRoadmap').innerHTML = marked.parse(p.roadmap);
+            document.getElementById('resPrompt').value = p.mega_prompt;
+            document.getElementById('resMoney').innerText = p.monetization || "N/A";
+            document.getElementById('resResume').innerHTML = (p.resume_points||[]).map(x=>`<li>${x}</li>`).join('');
+        }
 
-  </div>
-</section>
+        function saveHistory(p) { history.unshift(p); if(history.length>10) history.pop(); localStorage.setItem('devspark_history', JSON.stringify(history)); renderHistory(); }
+        
+        // FIXED HISTORY RENDER: Use IDs, not object passing
+        function renderHistory() {
+            document.getElementById('historyList').innerHTML = history.map(p => `
+                <div onclick='loadHistory(${p.id})' class="glass-input p-3 rounded-xl cursor-pointer hover:bg-white/10 mb-2">
+                    <div class="font-bold text-xs truncate" style="color:var(--text-main)">${p.title}</div>
+                    <div class="text-[9px] uppercase mt-1" style="color:var(--text-sub)">${p.domain}</div>
+                </div>`).join('');
+        }
 
-<!-- MENTOR -->
-<section id="view-mentor" class="hidden max-w-4xl mx-auto py-16 space-y-6">
-  <h1 class="text-5xl font-black text-center">Dr. Jitendra Prajapat</h1>
-  <p class="text-center text-cyan-400">AI Researcher • Cybersecurity Expert • Mentor</p>
+        function loadHistory(id) {
+            const p = history.find(x => x.id === id);
+            if(p) renderProject(p);
+        }
 
-  <div class="glass p-8 rounded-3xl text-slate-300 leading-relaxed">
-    I mentor students to build systems that survive real-world complexity —
-    from healthcare AI to secure enterprise systems.
-  </div>
+        // FIXED CLEAR HISTORY FUNCTION
+        function clearHistory() { 
+            if(confirm("Clear history?")) { 
+                history=[]; 
+                localStorage.removeItem('devspark_history'); 
+                renderHistory(); 
+            } 
+        }
 
-  <div class="text-center">
-    <a
-      href="https://wa.me/919664301637?text=Hello%20Dr.%20Jitendra,%20I%20would%20like%20mentorship%20guidance."
-      target="_blank"
-      class="bg-green-500 px-8 py-4 rounded-xl font-bold inline-block">
-      WhatsApp Mentor
-    </a>
-  </div>
-</section>
-
-</main>
-
-<!-- SETTINGS -->
-<div id="settingsModal" class="fixed inset-0 hidden bg-black/80 flex items-center justify-center">
-  <div class="glass p-6 rounded-2xl w-96 space-y-3">
-    <input id="apiKeyInput" placeholder="Paste Gemini API Key" class="p-3 rounded-xl w-full">
-    <button onclick="fetchModels()" class="bg-cyan-600 w-full py-2 rounded-xl">Fetch Models</button>
-    <select id="modelSelect" class="p-3 rounded-xl w-full"></select>
-    <button onclick="saveSettings()" class="bg-green-600 w-full py-2 rounded-xl font-bold">Save</button>
-  </div>
-</div>
-
-<script>
-let API_KEY = localStorage.getItem("gemini_key") || "";
-let MODEL = localStorage.getItem("gemini_model") || "gemini-1.5-flash";
-let history = JSON.parse(localStorage.getItem("devspark_history") || "[]");
-
-/* ---------- Views ---------- */
-function switchView(v){
-  viewGenerator.classList.toggle("hidden", v!=="generator");
-  viewMentor.classList.toggle("hidden", v!=="mentor");
-}
-
-/* ---------- Settings ---------- */
-function openSettings(){ settingsModal.classList.remove("hidden") }
-function saveSettings(){
-  API_KEY = apiKeyInput.value.trim();
-  MODEL = modelSelect.value;
-  localStorage.setItem("gemini_key",API_KEY);
-  localStorage.setItem("gemini_model",MODEL);
-  settingsModal.classList.add("hidden");
-}
-
-async function fetchModels(){
-  const key = apiKeyInput.value.trim();
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-  const data = await res.json();
-  const models = data.models
-    .filter(m=>m.supportedGenerationMethods?.includes("generateContent"))
-    .map(m=>m.name.replace("models/",""));
-  modelSelect.innerHTML = models.map(m=>`<option>${m}</option>`).join("");
-}
-
-/* ---------- History ---------- */
-function renderHistory(){
-  historyList.innerHTML = history.map(h=>`
-    <div onclick="loadHistory(${h.id})" class="glass p-2 rounded-xl cursor-pointer">
-      <div class="font-bold">${h.title}</div>
-      <div class="text-xs text-slate-400">${h.domain}</div>
-    </div>`).join("");
-}
-renderHistory();
-
-function loadHistory(id){
-  const p = history.find(x=>x.id===id);
-  if(p) renderResult(p);
-}
-
-/* ---------- Generation ---------- */
-async function generateProject(){
-  if(!API_KEY) return openSettings();
-
-  const stack = stackInput.value || "Modern Stack";
-  const domain = domainInput.value || "General";
-  const level = levelInput.value;
-
-  const prompt = `
-Return ONLY valid JSON:
-{
- "title":"Project Title",
- "description":"2 line summary",
- "tech_stack":["Tech1","Tech2"],
- "roadmap":"Markdown roadmap",
- "mentor_prompt":"Mentor guidance"
-}
-`;
-
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
-    {
-      method:"POST",
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-    }
-  );
-
-  const data = await res.json();
-  const text = data.candidates[0].content.parts[0].text.replace(/```/g,"");
-  const p = JSON.parse(text);
-
-  p.id = Date.now();
-  p.domain = domain;
-
-  history.unshift(p);
-  localStorage.setItem("devspark_history",JSON.stringify(history));
-
-  renderHistory();
-  renderResult(p);
-}
-
-function renderResult(p){
-  resultBox.classList.remove("hidden");
-  resTitle.innerText = p.title;
-  resDesc.innerText = p.description;
-  resStack.innerHTML = p.tech_stack.map(t=>`<span class="bg-slate-800 px-2 py-1 rounded">${t}</span>`).join("");
-  resRoadmap.innerHTML = marked.parse(p.roadmap);
-  resPrompt.value = p.mentor_prompt;
-}
-</script>
-
+        function openSettings() { document.getElementById('keyModal').classList.remove('hidden'); }
+        function saveSettings() {
+            const k=document.getElementById('apiKeyInput').value.trim(); 
+            if(!k) return showToast("Error","Key needed",true);
+            localStorage.setItem('gemini_key', k); API_KEY=k;
+            document.getElementById('keyModal').classList.add('hidden'); showToast("Saved","Config updated");
+        }
+        function showToast(h,m,e){
+            const t=document.getElementById('toast'); document.getElementById('tHead').innerText=h; document.getElementById('tMsg').innerText=m;
+            t.style.borderLeftColor = e ? 'red' : '#22d3ee';
+            t.classList.remove('translate-y-40'); setTimeout(()=>t.classList.add('translate-y-40'), 3000);
+        }
+        function copyPrompt() { navigator.clipboard.writeText(document.getElementById('resPrompt').value); showToast("Copied","Ready"); }
+        function randomizeInputs() {
+            const d = ["SaaS", "Mobile App", "AI Tool", "Game"]; const s = ["React", "Python", "Flutter", "Rust"];
+            document.getElementById('inDomain').value = d[Math.floor(Math.random()*d.length)];
+            document.getElementById('inStack').value = s[Math.floor(Math.random()*s.length)];
+        }
+    </script>
 </body>
 </html>
