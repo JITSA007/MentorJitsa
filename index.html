@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevSpark AI - Dr. Jitendra Edition v23</title>
+    <title>DevSpark AI - Dr. Jitendra Edition v25</title>
     
     <!-- LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -132,7 +132,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-black tracking-tight leading-none">Dev<span style="color:var(--accent)">Spark</span></h1>
-                    <p class="text-[10px] font-mono mt-1 uppercase tracking-[0.2em]" style="color:var(--text-sub)">v23.0 DYNAMIC</p>
+                    <p class="text-[10px] font-mono mt-1 uppercase tracking-[0.2em]" style="color:var(--text-sub)">v25.0 FIX</p>
                 </div>
             </div>
             
@@ -409,7 +409,6 @@
 
     <script>
         let API_KEY = localStorage.getItem('gemini_key');
-        // Default model is flash, but updated if user fetches new ones
         let MODEL = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
         let history = JSON.parse(localStorage.getItem('devspark_history')) || [];
         
@@ -420,7 +419,6 @@
                 document.getElementById('apiKeyInput').value = API_KEY;
             }
 
-            // Restore Cached Models List if available
             const cachedModels = localStorage.getItem('gemini_model_list');
             if (cachedModels) {
                 populateModelDropdown(JSON.parse(cachedModels));
@@ -443,7 +441,6 @@
 
         function closeResult() { document.getElementById('resultSection').classList.add('hidden'); }
 
-        // --- MODEL FETCHING LOGIC ---
         async function fetchAvailableModels() {
             const key = document.getElementById('apiKeyInput').value.trim();
             if(!key) return showToast("Error", "Enter Key First", true);
@@ -457,7 +454,6 @@
 
                 if(data.error) throw new Error(data.error.message);
 
-                // Filter only models that support content generation
                 const models = data.models
                     .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
                     .map(m => m.name.replace("models/", ""));
@@ -478,28 +474,21 @@
         function populateModelDropdown(models) {
             const select = document.getElementById('modelSelect');
             select.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
-            
-            // If the currently saved MODEL is in the list, select it. Otherwise select the first one.
             if(models.includes(MODEL)) {
                 select.value = MODEL;
-            } else if(models.includes('gemini-1.5-flash')) {
-                select.value = 'gemini-1.5-flash';
             } else {
                 select.value = models[0];
             }
         }
 
-        // --- GENERATOR LOGIC ---
         async function generateProject() {
             const s=document.getElementById('inStack').value||"Modern Tech", d=document.getElementById('inDomain').value||"Web App", l=document.getElementById('inLevel').value;
             document.getElementById('loadingSection').classList.remove('hidden');
-            document.getElementById('retryText').classList.add('hidden');
             
             const prompt = `Role: Senior Architect. Create project. User: ${l} dev, ${d}, ${s}. 
             Req: Return VALID JSON ONLY. NO markdown blocks. NO trailing text.
             Structure: { "title": "Name", "description": "Summary", "tech_stack": ["T1"], "roadmap": "Markdown", "monetization": "Idea", "resume_points": ["Point1"], "mega_prompt": "Tutor Prompt" }`;
             
-            // Use the USER SELECTED MODEL from Settings
             const selectedModel = MODEL; 
 
             try {
@@ -508,9 +497,11 @@
                 });
                 const data = await r.json();
                 
-                if (data.error) {
-                    if(data.error.code === 429) throw new Error("Quota Exceeded. Please try again in 30s.");
-                    throw new Error(data.error.message);
+                if (data.error) throw new Error(data.error.message);
+
+                // NULL CHECK FIX: Ensure we have content before parsing
+                if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
+                    throw new Error("Empty response from AI. Try again.");
                 }
 
                 let text = data.candidates[0].content.parts[0].text;
@@ -522,31 +513,53 @@
             } catch(e) {
                 console.error(e);
                 showToast("Error", e.message, true);
-                openSettings(); // Prompt user to check key/model
+                openSettings();
             } finally {
                 document.getElementById('loadingSection').classList.add('hidden');
             }
         }
 
         function renderProject(p) {
-            document.getElementById('resultSection').classList.remove('hidden');
-            document.getElementById('resTitle').innerText = p.title;
-            document.getElementById('resDesc').innerText = p.description;
-            document.getElementById('resStack').innerHTML = p.tech_stack.map(t=>`<span class="glass-badge px-3 py-1 rounded-lg text-xs font-mono">${t}</span>`).join('');
-            document.getElementById('resRoadmap').innerHTML = marked.parse(p.roadmap);
-            document.getElementById('resPrompt').value = p.mega_prompt;
-            document.getElementById('resMoney').innerText = p.monetization || "N/A";
-            document.getElementById('resResume').innerHTML = (p.resume_points||[]).map(x=>`<li>${x}</li>`).join('');
+            const resSection = document.getElementById('resultSection');
+            if (resSection) resSection.classList.remove('hidden');
+            
+            const setSafe = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val;
+            };
+
+            setSafe('resTitle', p.title);
+            setSafe('resDesc', p.description);
+            setSafe('resMoney', p.monetization || "N/A");
+
+            const stackEl = document.getElementById('resStack');
+            if (stackEl && p.tech_stack) {
+                stackEl.innerHTML = p.tech_stack.map(t=>`<span class="glass-badge px-3 py-1 rounded-lg text-xs font-mono">${t}</span>`).join('');
+            }
+
+            const roadEl = document.getElementById('resRoadmap');
+            if (roadEl && p.roadmap) roadEl.innerHTML = marked.parse(p.roadmap);
+
+            const promptEl = document.getElementById('resPrompt');
+            if (promptEl) promptEl.value = p.mega_prompt;
+            
+            const resumeEl = document.getElementById('resResume');
+            if (resumeEl && p.resume_points) {
+                resumeEl.innerHTML = p.resume_points.map(x=>`<li>${x}</li>`).join('');
+            }
         }
 
         function saveHistory(p) { history.unshift(p); if(history.length>10) history.pop(); localStorage.setItem('devspark_history', JSON.stringify(history)); renderHistory(); }
         
         function renderHistory() {
-            document.getElementById('historyList').innerHTML = history.map(p => `
-                <div onclick='loadHistory(${p.id})' class="glass-input p-3 rounded-xl cursor-pointer hover:bg-white/10 mb-2">
-                    <div class="font-bold text-xs truncate" style="color:var(--text-main)">${p.title}</div>
-                    <div class="text-[9px] uppercase mt-1" style="color:var(--text-sub)">${p.domain}</div>
-                </div>`).join('');
+            const list = document.getElementById('historyList');
+            if(list) {
+                list.innerHTML = history.map(p => `
+                    <div onclick='loadHistory(${p.id})' class="glass-input p-3 rounded-xl cursor-pointer hover:bg-white/10 mb-2">
+                        <div class="font-bold text-xs truncate" style="color:var(--text-main)">${p.title}</div>
+                        <div class="text-[9px] uppercase mt-1" style="color:var(--text-sub)">${p.domain}</div>
+                    </div>`).join('');
+            }
         }
 
         function loadHistory(id) {
