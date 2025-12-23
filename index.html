@@ -337,7 +337,7 @@
         <div id="loadingSection" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-xl bg-black/80">
             <div class="w-16 h-16 border-4 border-t-cyan-500 rounded-full animate-spin"></div>
             <h2 class="text-2xl font-bold text-white mt-4 animate-pulse">ARCHITECTING...</h2>
-            <p id="retryText" class="text-xs text-red-400 mt-2 hidden">Rate limit hit. Retrying...</p>
+            <p id="retryText" class="text-xs text-red-400 mt-2 hidden">Rate limit hit. Retrying in 3s...</p>
         </div>
 
         <!-- === RESULT OVERLAY === -->
@@ -372,33 +372,30 @@
 
     </main>
 
-    <!-- === SETTINGS MODAL === -->
+    <!-- === SETTINGS MODAL (DYNAMIC MODEL FETCH) === -->
     <div id="keyModal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4 hidden">
         <div class="glass-3d w-full max-w-md p-10 rounded-[3rem]">
-            <h2 class="text-2xl font-bold text-white text-center mb-6">Settings</h2>
-            
+            <h2 class="text-2xl font-bold text-white text-center mb-6">Configuration</h2>
             <div class="space-y-4">
-                <!-- API KEY INPUT -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-2">1. Paste API Key</label>
-                    <input type="password" id="apiKeyInput" class="glass-input w-full rounded-2xl py-4 px-6 text-center" placeholder="Paste Google API Key">
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-2">1. Paste API Key</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="password" id="apiKeyInput" class="glass-input w-full rounded-2xl py-3 px-4 text-center" placeholder="Google Gemini Key">
+                        <button onclick="fetchAvailableModels()" id="fetchBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-2xl text-xs transition whitespace-nowrap">
+                            Fetch Models
+                        </button>
+                    </div>
                 </div>
-
-                <!-- MODEL FETCH BUTTON -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-2 flex justify-between items-center">
-                        <span>2. Select Model</span>
-                        <button onclick="fetchAvailableModels()" class="text-cyan-400 hover:text-cyan-300 underline font-bold" id="fetchBtn">Fetch Models</button>
-                    </label>
-                    <select id="modelSelect" class="glass-input w-full rounded-2xl py-4 px-6 appearance-none bg-black text-white cursor-pointer text-center">
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-2">2. Select AI Model</label>
+                    <select id="modelSelect" class="glass-input w-full rounded-2xl py-4 px-6 mt-1 appearance-none bg-black text-white text-center cursor-pointer">
                         <option value="gemini-1.5-flash">Default (gemini-1.5-flash)</option>
                     </select>
                 </div>
             </div>
-
-            <div class="flex gap-3 mt-6">
+            <div class="flex gap-3 mt-8">
                 <button onclick="document.getElementById('keyModal').classList.add('hidden')" class="flex-1 glass-input py-3 rounded-2xl font-bold">Close</button>
-                <button onclick="saveSettings()" class="flex-[2] bg-white text-black font-bold py-3 rounded-2xl hover:bg-slate-200">Save</button>
+                <button onclick="saveSettings()" class="flex-[2] bg-white text-black font-bold py-3 rounded-2xl hover:bg-slate-200">Save & Use</button>
             </div>
             <p class="text-center mt-4 text-[10px] text-slate-500"><a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline hover:text-cyan-400">Get Free Key</a></p>
         </div>
@@ -412,18 +409,18 @@
 
     <script>
         let API_KEY = localStorage.getItem('gemini_key');
+        // Default model is flash, but updated if user fetches new ones
         let MODEL = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
         let history = JSON.parse(localStorage.getItem('devspark_history')) || [];
         
         window.onload = () => {
-            // Restore Key & Model
             if(!API_KEY) {
                 document.getElementById('keyModal').classList.remove('hidden');
             } else {
                 document.getElementById('apiKeyInput').value = API_KEY;
             }
 
-            // Restore Model List from Cache if available
+            // Restore Cached Models List if available
             const cachedModels = localStorage.getItem('gemini_model_list');
             if (cachedModels) {
                 populateModelDropdown(JSON.parse(cachedModels));
@@ -433,26 +430,39 @@
             renderHistory();
         };
 
-        // --- DYNAMIC MODEL FETCHING ---
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        }
+
+        function switchView(v) {
+            const gen = document.getElementById('view-generator'), about = document.getElementById('view-about');
+            if(v==='generator') { gen.classList.remove('hidden'); gen.classList.add('flex'); about.classList.add('hidden'); about.classList.remove('flex'); }
+            else { gen.classList.add('hidden'); gen.classList.remove('flex'); about.classList.remove('hidden'); about.classList.add('flex'); }
+        }
+
+        function closeResult() { document.getElementById('resultSection').classList.add('hidden'); }
+
+        // --- MODEL FETCHING LOGIC ---
         async function fetchAvailableModels() {
             const key = document.getElementById('apiKeyInput').value.trim();
             if(!key) return showToast("Error", "Enter Key First", true);
 
             const btn = document.getElementById('fetchBtn');
-            btn.innerText = "Fetching...";
-            
+            btn.innerText = "Loading...";
+
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
                 const data = await response.json();
-                
+
                 if(data.error) throw new Error(data.error.message);
 
-                // Filter valid models
+                // Filter only models that support content generation
                 const models = data.models
                     .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
                     .map(m => m.name.replace("models/", ""));
 
-                if(models.length === 0) throw new Error("No compatible models found");
+                if(models.length === 0) throw new Error("No models found.");
 
                 localStorage.setItem('gemini_model_list', JSON.stringify(models));
                 populateModelDropdown(models);
@@ -467,28 +477,17 @@
 
         function populateModelDropdown(models) {
             const select = document.getElementById('modelSelect');
-            const current = select.value;
             select.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
             
-            // Try to restore previous selection, or stick to default
-            if(models.includes(MODEL)) select.value = MODEL;
-            else if(models.includes('gemini-1.5-flash')) select.value = 'gemini-1.5-flash';
-            else select.value = models[0];
+            // If the currently saved MODEL is in the list, select it. Otherwise select the first one.
+            if(models.includes(MODEL)) {
+                select.value = MODEL;
+            } else if(models.includes('gemini-1.5-flash')) {
+                select.value = 'gemini-1.5-flash';
+            } else {
+                select.value = models[0];
+            }
         }
-
-        // --- THEME & UI ---
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-        }
-
-        function switchView(v) {
-            const gen = document.getElementById('view-generator'), about = document.getElementById('view-about');
-            if(v==='generator') { gen.classList.remove('hidden'); gen.classList.add('flex'); about.classList.add('hidden'); about.classList.remove('flex'); }
-            else { gen.classList.add('hidden'); gen.classList.remove('flex'); about.classList.remove('hidden'); about.classList.add('flex'); }
-        }
-
-        function closeResult() { document.getElementById('resultSection').classList.add('hidden'); }
 
         // --- GENERATOR LOGIC ---
         async function generateProject() {
@@ -500,9 +499,9 @@
             Req: Return VALID JSON ONLY. NO markdown blocks. NO trailing text.
             Structure: { "title": "Name", "description": "Summary", "tech_stack": ["T1"], "roadmap": "Markdown", "monetization": "Idea", "resume_points": ["Point1"], "mega_prompt": "Tutor Prompt" }`;
             
-            // Use the USER SELECTED MODEL
-            const selectedModel = MODEL;
-            
+            // Use the USER SELECTED MODEL from Settings
+            const selectedModel = MODEL; 
+
             try {
                 const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${API_KEY}`, { 
                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
@@ -510,9 +509,7 @@
                 const data = await r.json();
                 
                 if (data.error) {
-                    if(data.error.code === 429) {
-                        throw new Error("Quota Exceeded. Please try again in 30s.");
-                    }
+                    if(data.error.code === 429) throw new Error("Quota Exceeded. Please try again in 30s.");
                     throw new Error(data.error.message);
                 }
 
@@ -524,8 +521,8 @@
 
             } catch(e) {
                 console.error(e);
-                showToast("Error", e.message, true); 
-                openSettings();
+                showToast("Error", e.message, true);
+                openSettings(); // Prompt user to check key/model
             } finally {
                 document.getElementById('loadingSection').classList.add('hidden');
             }
