@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="https://www.google.com/search?q=https://img.icons8.com/external-flaticons-lineal-color-flat-icons/128/null/external-robot-technology-flaticons-lineal-color-flat-icons.png" alt="DevSpark Logo" width="100" />
-
 ⚡ DevSpark AI <span style="color:#6366f1">(Ultimate Edition)</span>
 
 Your Personal AI Project Architect & Mentor.
